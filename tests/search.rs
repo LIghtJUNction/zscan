@@ -208,3 +208,69 @@ fn reusable_finder() {
         }
     }
 }
+
+#[test]
+fn pair_filter_anchor_choices_and_candidate_tails() {
+    let offsets = if cfg!(miri) {
+        &[1][..]
+    } else {
+        &[0, 1, 7, 15, 31, 63][..]
+    };
+    let lengths = if cfg!(miri) {
+        &[2, 33, 65][..]
+    } else {
+        &[2, 3, 8, 16, 17, 31, 32, 33, 64, 65, 96, 129][..]
+    };
+    let tails = if cfg!(miri) {
+        &[32][..]
+    } else {
+        &[31, 32, 33, 63, 64, 65][..]
+    };
+    for &offset in offsets {
+        for &length in lengths {
+            for variant in 0..4 {
+                let mut needle = vec![0x80; length];
+                match variant {
+                    // Distinct endpoint probes.
+                    0 => needle[length - 1] = 0xfe,
+                    // Equal endpoints with a different probe near the front.
+                    1 => needle[(length - 1).min(17)] = 0x81,
+                    // The differing byte is beyond the bounded probe search
+                    // for long needles: dense false positives must fall back.
+                    2 => needle[length / 2] = 0x82,
+                    // Repeated patterns make both filters and full candidate
+                    // verification encounter overlapping plausible matches.
+                    _ => {
+                        for (i, byte) in needle.iter_mut().enumerate() {
+                            *byte += (i % 3 == 1) as u8;
+                        }
+                    }
+                }
+                for &extra in tails {
+                    let haystack_length = length + extra;
+                    // All inputs exceed the short-haystack cutoff, while the
+                    // number of legal starts straddles SIMD block boundaries.
+                    assert!(haystack_length > 32);
+                    let mut original = vec![0x80; haystack_length];
+                    if variant == 1 {
+                        for i in (3..haystack_length).step_by(7) {
+                            original[i] = 0x81;
+                        }
+                    }
+                    for position in [None, Some(0), Some(1), Some(31), Some(32), Some(extra)] {
+                        if position.is_some_and(|position| position > extra) {
+                            continue;
+                        }
+                        let mut storage = vec![0x53; offset + haystack_length + 64];
+                        let haystack = &mut storage[offset..offset + haystack_length];
+                        haystack.copy_from_slice(&original);
+                        if let Some(position) = position {
+                            haystack[position..position + length].copy_from_slice(&needle);
+                        }
+                        check(haystack, &needle);
+                    }
+                }
+            }
+        }
+    }
+}

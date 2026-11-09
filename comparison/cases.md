@@ -82,3 +82,19 @@ source SHA-256 hashes, command lines, and stderr. `summarize.py` derives tables
 without deleting outliers. Re-run the whole suite on fixed idle hardware before
 using a timing difference as a product guarantee.
 
+
+## Pre-timing addendum: structured text and baseline eligibility
+
+Before any full timing run, add a separate `text` group with HTTP header, JSON,
+and log-line fragments. Each has 128, 512, 4,096, and 65,536-byte haystacks with
+first, last, absent, and dense matches, using ASCII needles `content-length:`,
+`"request_id":"`, and `level=error`. These 48 cases supplement all 559 original
+cases unchanged; they avoid relying only on synthetic sentinel-byte data. The
+original short/typical groups remain separately visible in every summary.
+
+Initial correctness-only smoke detected a memx 0.2.2 reverse substring bug.
+Retain all memx reverse timing cells and their correctness flags, but mark the
+entire operation ineligible for performance ratios. This prevents incomplete
+searches from being counted as fast. See [baseline-notes.md](baseline-notes.md)
+for the minimal reproduction and source. No zscan or memchr discrepancy is
+accepted, and no case is removed or rewritten in response to this finding.

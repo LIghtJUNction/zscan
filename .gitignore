@@ -1,3 +1,4 @@
 /target/
 /comparison/target/
 *.profraw
+__pycache__/

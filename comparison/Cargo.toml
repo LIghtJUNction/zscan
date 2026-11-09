@@ -1,0 +1,19 @@
+[package]
+name = "zscan-comparison"
+version = "0.0.0"
+edition = "2021"
+rust-version = "1.70"
+publish = false
+
+[workspace]
+
+[dependencies]
+zscan = { path = ".." }
+memchr = "=2.8.3"
+memx = "=0.2.2"
+
+[profile.release]
+opt-level = 3
+codegen-units = 1
+lto = "thin"
+

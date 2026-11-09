@@ -20,18 +20,28 @@
 #[cfg(test)]
 extern crate std;
 
+mod bytes;
+mod prefilter;
 mod twoway;
 
 /// Finds the first occurrence of `byte` in `haystack`.
 #[inline]
 pub fn find_byte(byte: u8, haystack: &[u8]) -> Option<usize> {
-    haystack.iter().position(|&b| b == byte)
+    if haystack.len() < 32 {
+        bytes::scalar_byte::<false>(byte, haystack)
+    } else {
+        bytes::Backend::detect().byte::<false>(byte, haystack)
+    }
 }
 
 /// Finds the last occurrence of `byte` in `haystack`.
 #[inline]
 pub fn rfind_byte(byte: u8, haystack: &[u8]) -> Option<usize> {
-    haystack.iter().rposition(|&b| b == byte)
+    if haystack.len() < 32 {
+        bytes::scalar_byte::<true>(byte, haystack)
+    } else {
+        bytes::Backend::detect().byte::<true>(byte, haystack)
+    }
 }
 
 /// Finds the first occurrence of `needle` in `haystack`.
@@ -39,14 +49,7 @@ pub fn rfind_byte(byte: u8, haystack: &[u8]) -> Option<usize> {
 /// An empty needle returns `Some(0)`; an overlong needle returns `None`.
 #[inline]
 pub fn find(haystack: &[u8], needle: &[u8]) -> Option<usize> {
-    if needle.len() > haystack.len() {
-        return None;
-    }
-    match needle.len() {
-        0 => Some(0),
-        1 => find_byte(needle[0], haystack),
-        _ => twoway::TwoWay::new::<false>(needle).find::<false>(haystack, needle),
-    }
+    search::<false>(haystack, needle, None)
 }
 
 /// Finds the last occurrence of `needle` in `haystack`.
@@ -54,14 +57,7 @@ pub fn find(haystack: &[u8], needle: &[u8]) -> Option<usize> {
 /// An empty needle returns `Some(haystack.len())`.
 #[inline]
 pub fn rfind(haystack: &[u8], needle: &[u8]) -> Option<usize> {
-    if needle.len() > haystack.len() {
-        return None;
-    }
-    match needle.len() {
-        0 => Some(haystack.len()),
-        1 => rfind_byte(needle[0], haystack),
-        _ => twoway::TwoWay::new::<true>(needle).find::<true>(haystack, needle),
-    }
+    search::<true>(haystack, needle, None)
 }
 
 /// A borrowed needle with fixed-size preprocessing for both search directions.
@@ -74,6 +70,8 @@ pub struct Finder<'n> {
     needle: &'n [u8],
     forward: twoway::TwoWay,
     reverse: twoway::TwoWay,
+    filter: prefilter::Filter,
+    backend: bytes::Backend,
 }
 
 impl<'n> Finder<'n> {
@@ -84,32 +82,73 @@ impl<'n> Finder<'n> {
             needle,
             forward: twoway::TwoWay::new::<false>(needle),
             reverse: twoway::TwoWay::new::<true>(needle),
+            filter: prefilter::Filter::new(needle),
+            backend: bytes::Backend::detect(),
         }
     }
 
     /// Finds the first occurrence of this needle in `haystack`.
     #[inline]
     pub fn find(&self, haystack: &[u8]) -> Option<usize> {
-        if self.needle.len() > haystack.len() {
-            return None;
-        }
-        match self.needle.len() {
-            0 => Some(0),
-            1 => find_byte(self.needle[0], haystack),
-            _ => self.forward.find::<false>(haystack, self.needle),
-        }
+        search::<false>(haystack, self.needle, Some(self))
     }
 
     /// Finds the last occurrence of this needle in `haystack`.
     #[inline]
     pub fn rfind(&self, haystack: &[u8]) -> Option<usize> {
-        if self.needle.len() > haystack.len() {
-            return None;
+        search::<true>(haystack, self.needle, Some(self))
+    }
+}
+
+#[inline]
+fn search<const REVERSE: bool>(h: &[u8], n: &[u8], cache: Option<&Finder<'_>>) -> Option<usize> {
+    if n.len() > h.len() {
+        return None;
+    }
+    if n.is_empty() {
+        return Some(if REVERSE { h.len() } else { 0 });
+    }
+    if n.len() == 1 {
+        if h.len() >= 32 {
+            if let Some(finder) = cache {
+                return finder.backend.byte::<REVERSE>(n[0], h);
+            }
         }
-        match self.needle.len() {
-            0 => Some(haystack.len()),
-            1 => rfind_byte(self.needle[0], haystack),
-            _ => self.reverse.find::<true>(haystack, self.needle),
+        return if REVERSE {
+            rfind_byte(n[0], h)
+        } else {
+            find_byte(n[0], h)
+        };
+    }
+    if !cfg!(zscan_no_short) {
+        if h.len() <= 32 {
+            return prefilter::short::<REVERSE>(h, n);
         }
+        // A common first/last boundary hit needs neither factorization nor
+        // runtime dispatch. One extra O(m) comparison keeps the linear bound.
+        let boundary = if REVERSE { h.len() - n.len() } else { 0 };
+        if h[boundary] == n[0] && bytes::equal(&h[boundary..boundary + n.len()], n) {
+            return Some(boundary);
+        }
+    }
+    match cache {
+        Some(finder) => prefilter::find::<REVERSE>(
+            h,
+            n,
+            finder.filter,
+            finder.backend,
+            Some(if REVERSE {
+                &finder.reverse
+            } else {
+                &finder.forward
+            }),
+        ),
+        None => prefilter::find::<REVERSE>(
+            h,
+            n,
+            prefilter::Filter::new(n),
+            bytes::Backend::detect(),
+            None,
+        ),
     }
 }
