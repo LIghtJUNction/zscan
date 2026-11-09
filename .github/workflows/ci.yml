@@ -14,6 +14,13 @@ name: CI
 permissions:
   contents: read
 
+concurrency:
+  # Supersede ordinary branch/PR checks, never exact-commit release verification.
+  # A reusable call inherits github.workflow from its caller; keep this namespace
+  # separate from the release workflow's zscan-release group.
+  group: ci-${{ github.workflow }}-${{ github.ref }}-${{ inputs.commit || 'branch' }}
+  cancel-in-progress: ${{ !inputs.commit }}
+
 env:
   CARGO_TERM_COLOR: always
 

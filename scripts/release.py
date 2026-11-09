@@ -235,17 +235,23 @@ def github_release():
     print("Created Release: " + release["html_url"])
 
 
+def output_identity(identity):
+    if output := os.environ.get("GITHUB_OUTPUT"):
+        with open(output, "a") as stream:
+            for key, value in identity.items():
+                stream.write(key + "=" + value + "\n")
+    print(json.dumps(identity))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("command", choices=("resolve", "check", "publish", "github"))
     command = parser.parse_args().command
     if command == "resolve":
         identity = resolve_tag(os.environ["RELEASE_TAG"])
-        if output := os.environ.get("GITHUB_OUTPUT"):
-            with open(output, "a") as stream:
-                for key, value in identity.items():
-                    stream.write(key + "=" + value + "\n")
-        print(json.dumps(identity))
+        if os.environ.get("GITHUB_EVENT_NAME") == "push" and git("rev-parse", "HEAD") != identity["commit"]:
+            raise ValueError("tag moved since the push event; refusing a different commit")
+        output_identity(identity)
     elif command == "check":
         print(json.dumps(checked_identity()))
     elif command == "publish":

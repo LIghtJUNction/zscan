@@ -12,17 +12,67 @@ python3 scripts/test_backends.py
 
 ## Release
 
-Set the repository Secret `CARGO_REGISTRY_TOKEN`, commit the intended version,
-then push its existing-commit `vX.Y.Z` tag. The Release workflow also accepts an
-existing tag through **Run workflow**. Only plain release versions are accepted;
-leading zeroes and prerelease suffixes are rejected.
+Set the repository Secret `CARGO_REGISTRY_TOKEN`, then open **Actions → Release
+→ Run workflow** on `main`. Choose one mode:
 
-The workflow resolves the tag first and passes its full commit SHA to every CI
-checkout. A manual run checks the tagged source even when the workflow is started
-from a different branch. Publication checks the local HEAD, tag, remote tag,
-manifest version, clean tracked files, and archive VCS identity again. The
-publication job starts only after the full CI matrix succeeds, then repeats
-packaging and dry-run before uploading.
+| Mode | Effect |
+| --- | --- |
+| `current` | Release the version already in Cargo.toml; use this for the first release. |
+| `patch` | For example, 0.1.0 → 0.1.1. |
+| `minor` | For example, 0.1.3 → 0.2.0. |
+| `major` | For example, 0.1.3 → 1.0.0. |
+| `custom` | Set the optional `version` field to a greater plain X.Y.Z version. |
+| `existing-tag` | Set `tag` to an existing vX.Y.Z tag to resume its release. |
+
+Leave unused fields empty. Older dispatch clients supplying only `tag` still
+work. Plain release versions are required; leading zeroes and prerelease
+suffixes are rejected. New release preparation is restricted to `main`.
+
+### Release through a committed request
+
+When workflow dispatch is unavailable, commit a deliberate change to
+`.github/release-request.json` on `main`. For the first 0.1.0 release:
+
+```json
+{"mode":"current","expected_version":"0.1.0"}
+```
+
+Only changes to this exact file initiate branch-based publication. Ordinary
+source pushes do not. `expected_version` must match the request commit's
+Cargo.toml, preventing an old request from causing a different bump. The JSON
+accepts only `mode`, `expected_version`, optional `version` or `tag` as above,
+and an optional `request_id` of 1–80 letters, digits, dots, underscores or hyphens.
+A fresh `request_id` allows a deliberate retry commit. Unknown or duplicate
+keys, empty or non-string values, conflicting selectors, symlinks, and requests
+over 4 KiB are rejected. To resume an existing release, for example:
+
+```json
+{"mode":"existing-tag","expected_version":"0.1.0","tag":"v0.1.0","request_id":"retry-1"}
+```
+
+Here `expected_version` refers to the branch source, even when the selected tag
+is older. Create or edit the request file only when intending to initiate a
+release.
+
+### Version commit, checks, and publication
+
+Preparation updates only `Cargo.toml`, `Cargo.lock`, and the path zscan entry in
+`comparison/Cargo.lock`. It prints the diff and builds a deterministic release
+commit with a fixed bot identity and the source commit's timestamp plus one
+second. `current` makes an empty release commit so the branch and tag can be
+advanced in one atomic operation. The script checks registry availability before
+changing refs, then performs one non-force atomic push of `main` and `vX.Y.Z`.
+Concurrent branch or tag changes cannot partially advance these refs; no tag or
+published version is overwritten. A matching existing release commit/tag can be
+resumed without another push.
+
+GitHub-token pushes do not launch new Actions runs. This workflow explicitly
+calls the full CI matrix on the resolved commit and then publishes in the same
+run. Direct pushes of existing-commit `vX.Y.Z` tags remain supported. Every CI
+checkout uses the tag's exact commit. Publication checks the local HEAD, tag,
+remote tag, manifest version, clean tracked files, and archive VCS identity
+again. The publication job starts only after the full CI matrix succeeds, then
+repeats packaging and dry-run before uploading.
 
 Release packaging and publication use pinned Rust/Cargo **1.99.1**, recorded in
 `scripts/release-toolchain.txt`. The resolver reads this file from the tagged
@@ -49,9 +99,11 @@ without republishing. A different archive or a yanked version requires manual
 investigation. GitHub Release creation happens only after the registry confirms
 the matching crate, version, and checksum.
 
-`test_release.py` exercises these failure and recovery cases with isolated mocks;
-it never uploads a crate. Configuring this workflow or passing its tests is not
-evidence of a real publication.
+`test_release.py` exercises publication failures with isolated mocks.
+`test_prepare_release.py` checks version changes and uses temporary local Git
+remotes to exercise branch/tag races, atomic pushes and idempotent recovery.
+Neither test suite contacts GitHub or uploads a crate. Configuring this workflow
+or passing its tests is not evidence of a real publication.
 
 ## Action pins
 

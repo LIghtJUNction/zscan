@@ -106,10 +106,17 @@ with their original source snapshots; they were measured before this revision.
 
 ## Release
 
-The [Release workflow](.github/workflows/release.yml) accepts a `vX.Y.Z` tag or a
-manual selection of an existing tag. It checks the tag's exact commit through
-the full CI matrix, verifies the package contents, packages and dry-runs before
-publishing. Only the publish step receives the repository Secret
+The [Release workflow](.github/workflows/release.yml) supports `current`, `patch`,
+`minor`, `major`, and `custom` version selection, plus `existing-tag` recovery.
+Use **Actions → Release → Run workflow** on `main`, or commit an explicit
+`.github/release-request.json` request as described in the
+[maintenance guide](scripts/README.md). A bump updates the manifest and both
+lockfiles, then atomically pushes the version commit and its immutable tag.
+Existing `vX.Y.Z` tag pushes are also supported.
+
+The workflow checks the tag's exact commit through the full CI matrix, verifies
+the package contents, packages and dry-runs before publishing. Only the publish
+step receives the repository Secret
 `CARGO_REGISTRY_TOKEN`. An exact crates.io archive checksum must be confirmed
-before a GitHub Release is created. [Maintenance details](scripts/README.md)
-cover ambiguous upload errors and safe manual recovery.
+before a GitHub Release is created. Ambiguous upload errors are checked against
+the registry before any manual recovery; an existing version is never overwritten.
