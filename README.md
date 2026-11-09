@@ -3,6 +3,11 @@
 Byte and substring search with no dependencies, no allocation and an always
 `no_std` library. Rust 1.70 or newer; MIT licensed.
 
+```toml
+[dependencies]
+zscan = "0.1"
+```
+
 The API consists of four functions and one borrowed searcher:
 
 ```rust
