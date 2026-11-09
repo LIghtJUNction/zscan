@@ -1,0 +1,88 @@
+name: Release
+
+"on":
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing vX.Y.Z tag to publish or finish releasing
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: zscan-release
+  cancel-in-progress: false
+
+jobs:
+  resolve:
+    if: github.repository == 'LIghtJUNction/zscan'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      commit: ${{ steps.tag.outputs.commit }}
+      tag: ${{ steps.tag.outputs.tag }}
+      version: ${{ steps.tag.outputs.version }}
+      toolchain: ${{ steps.tag.outputs.toolchain }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: false
+      - name: Resolve and validate an existing tag
+        id: tag
+        env:
+          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+        run: python3 scripts/release.py resolve
+
+  verify:
+    needs: resolve
+    uses: ./.github/workflows/ci.yml
+    with:
+      commit: ${{ needs.resolve.outputs.commit }}
+
+  publish:
+    needs: [resolve, verify]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    env:
+      RELEASE_TAG: ${{ needs.resolve.outputs.tag }}
+      RELEASE_COMMIT: ${{ needs.resolve.outputs.commit }}
+      RELEASE_VERSION: ${{ needs.resolve.outputs.version }}
+      # Keep package bytes reproducible when replaying an existing release tag.
+      # Regular CI deliberately continues to track rolling stable.
+      RUSTUP_TOOLCHAIN: ${{ needs.resolve.outputs.toolchain }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ needs.resolve.outputs.commit }}
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: false
+      - run: rustup toolchain install "$RUSTUP_TOOLCHAIN" --profile minimal
+      - name: Recheck identity and package the checked commit
+        run: |
+          python3 scripts/release.py check
+          python3 scripts/audit.py
+          mkdir -p target
+          cargo package --list --locked > target/package-files.txt
+          python3 scripts/audit.py --package-list target/package-files.txt
+          cat target/package-files.txt
+          cargo package --locked
+          cargo publish --dry-run --locked
+      - name: Publish once and confirm the registry checksum
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: python3 scripts/release.py publish
+      - name: Create GitHub Release after registry confirmation
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/release.py github
+
