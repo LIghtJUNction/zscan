@@ -1,0 +1,157 @@
+{
+  "started_utc": "2026-11-09T16:15:43.635256+00:00",
+  "config": "generic",
+  "mode": "full",
+  "complete": true,
+  "rustflags": "",
+  "compile_profile": "release: opt-level=3, codegen-units=1, lto=thin",
+  "uname": {
+    "system": "Linux",
+    "node": "cf3637fa3cf5",
+    "release": "6.18.57",
+    "version": "#1 SMP Tue Oct 20 21:56:04 UTC 2026",
+    "machine": "x86_64",
+    "processor": ""
+  },
+  "cpu": {
+    "logical_cpu_entries": 9,
+    "first_cpu": "processor\t: 0\nvendor_id\t: GenuineIntel\ncpu family\t: 6\nmodel\t\t: 207\nmodel name\t: INTEL(R) XEON(R) PLATINUM 8573C\nstepping\t: 2\nmicrocode\t: 0x1\ncpu MHz\t\t: 2300.000\ncache size\t: 266240 KB\nphysical id\t: 0\nsiblings\t: 9\ncore id\t\t: 0\ncpu cores\t: 9\napicid\t\t: 0\ninitial apicid\t: 0\nfpu\t\t: yes\nfpu_exception\t: yes\ncpuid level\t: 28\nwp\t\t: yes\nflags\t\t: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc rep_good nopl xtopology nonstop_tsc cpuid tsc_known_freq pni pclmulqdq ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch cpuid_fault fsgsbase tsc_adjust bmi1 hle avx2 smep bmi2 erms invpcid rtm avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves avx_vnni avx512_bf16 arat avx512vbmi umip waitpkg avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq rdpid cldemote movdiri movdir64b fsrm serialize tsxldtrk avx512_fp16 arch_capabilities\nbugs\t\t: spectre_v1 spectre_v2 spec_store_bypass swapgs retbleed bhi spectre_v2_user its\nbogomips\t: 4600.00\nclflush size\t: 64\ncache_alignment\t: 64\naddress sizes\t: 46 bits physical, 57 bits virtual\npower management:"
+  },
+  "affinity": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8
+  ],
+  "rustc": {
+    "command": [
+      "rustc",
+      "--version",
+      "--verbose"
+    ],
+    "returncode": 0,
+    "stdout": "rustc 1.99.1 (58cf8f9c3 2026-10-13)\nbinary: rustc\ncommit-hash: 58cf8f9c35b355199727627d07ae34a4e2846d67\ncommit-date: 2026-10-13\nhost: x86_64-unknown-linux-gnu\nrelease: 1.99.1\nLLVM version: 23.1.1\n",
+    "stderr": ""
+  },
+  "cargo": {
+    "command": [
+      "/home/agent/.cargo/bin/cargo",
+      "--version",
+      "--verbose"
+    ],
+    "returncode": 0,
+    "stdout": "cargo 1.99.1 (5f94df478 2026-08-27)\nrelease: 1.99.1\ncommit-hash: 5f94df4789f005f9a352888e8355ffc645b7ed0e\ncommit-date: 2026-08-27\nhost: x86_64-unknown-linux-gnu\nlibgit2: 1.9.6 (sys:0.21.0 vendored)\nlibcurl: 8.21.0-DEV (sys:0.4.90+curl-8.21.0 vendored ssl:OpenSSL/3.6.3)\nssl: OpenSSL 3.6.3 9 Jun 2026\nos: Debian 13.0.0 (trixie) [64-bit]\n",
+    "stderr": ""
+  },
+  "git_commit": {
+    "command": [
+      "git",
+      "rev-parse",
+      "HEAD"
+    ],
+    "returncode": 0,
+    "stdout": "fbe6bcb91989e45d4bf6805c6888863c57554cb5\n",
+    "stderr": ""
+  },
+  "git_status": {
+    "command": [
+      "git",
+      "status",
+      "--short"
+    ],
+    "returncode": 0,
+    "stdout": " M comparison/cases.md\n M comparison/src/main.rs\n",
+    "stderr": ""
+  },
+  "baseline_commits": {
+    "memchr-2.8.3": "5fdb40c054e1fff359a2f7bdf7f87a13b34b465d",
+    "memx-0.2.2": "c52c59209caa169054a4b2f8533d9ad646c59dd4"
+  },
+  "build_command": [
+    "/home/agent/.cargo/bin/cargo",
+    "build",
+    "--release",
+    "--locked",
+    "--manifest-path",
+    "comparison/Cargo.toml"
+  ],
+  "source_sha256": {
+    ".github/workflows/ci.yml": "aaad7d1a4de56cdbb01cf039432c9ee0988a06b401b968f017a1ffd85d0a726f",
+    ".github/workflows/release.yml": "9508b82d1f695e648e8d07629a993fffce5ac5c6f768cb60a00f30d0da20e305",
+    ".gitignore": "1b620e230a133c2c7e24952861de226c8a500a8f40b5c84c83d02ae496e80790",
+    "Cargo.lock": "ccb7a4c0bf1a7f8eb712fd7be4ce166fd459652fa6107d02044e0184650c8b5c",
+    "Cargo.toml": "6da9cb5baa20c35e71589d5b3f848e657d7e2deedcc181aa7d5ec646524a417e",
+    "LICENSE": "97016fcf641f0ebb5c3fb6a0eda2e2bec82aecd443f3acd24a536499d5fa28a4",
+    "README.md": "b048307e11488847b29c2f615d9995ccbb34a94c59adcb80d5a671cca1af11e9",
+    "VALIDATION.md": "f3fc14f96efd70bbc8595801b70f6e175835ae9a31f58e86d6bedb7137f53173",
+    "comparison/.gitignore": "32dae3052f331ee34d628ef535709b301259a45df7c7522c4d35dcf49873f00b",
+    "comparison/Cargo.lock": "8d26b3e5727aa1bee97b92d9dd29f73add758f0a24671934c8d3edda7522cac2",
+    "comparison/Cargo.toml": "3a0392789e532400b4028f57a87ca2a0e00dcc6e68d4ad3e97f6017f5c42dea8",
+    "comparison/README.md": "6cc069db95a954d2e572b64d8fec5818ce0bfaa35133ff3769c74021fc61fa7a",
+    "comparison/baseline-notes.md": "8fb387126b5478f41dd83d9e581816b083fa7775d9b6e61aa441ed7bd33725f5",
+    "comparison/cases.md": "c494b976773de97d690384114de87ead051d04def4f76229d77b3d84a71a0125",
+    "comparison/run.py": "73693cefbaeacbc231f4d9297c990a359cb32c6ec2fc48912f6cc680a2407f59",
+    "comparison/src/main.rs": "51950df200fe1085c3b02d7fe3869701b08a05a9782e6c70a919e5777ac98d3d",
+    "comparison/summarize.py": "d6ccadc39e79bf4af0de8766520a21900a2ab0424f66f71d24ea1e5de2aee192",
+    "scripts/README.md": "4d74249872956350f47ef40d71aaf33b79cbe00e7383cb3872c22f64dddb0ec0",
+    "scripts/audit.py": "bb11a98176a67c3eda434385a01d4d9f65b2b053459125c63609e8567954dac4",
+    "scripts/release-toolchain.txt": "562935b632af120c5b6afb7e3be9b46790c417de437b6852fd2a49325db0c3cd",
+    "scripts/release.py": "1106cefb5dcec41a202579cd218142f828c81a2862edce9e7339c7990b4eb476",
+    "scripts/test_backends.py": "bee47915de57118d2ed5acbe01d5eee17e4b7e37fbb51a9854daf64b6678ff2a",
+    "scripts/test_release.py": "1325bf61ade587fb9d61d0e1dfc87a9de2602cb0a5f9afdbcf97176f820641e8",
+    "src/bytes.rs": "7960c021a4c361a8278662a7bb971b03109fa1358761513efdc41a68fc5202a5",
+    "src/lib.rs": "43ad1a4a91424928e69d4b294d4afdb4697ba2980d4725cc7a7c188f5def48cf",
+    "src/prefilter.rs": "395eeb1c6e5a947d4d956e06f5cab58858d1dc4d1d70e1b5241d59b8783cd2c8",
+    "src/twoway.rs": "5fdc3b89ea587bed6cf6d7680a169746cfaf50dd2473810b0131df4bf2c2b7e3",
+    "tests/guard_pages.rs": "63066515e7a2b1b1d95d552999aa6412ab1438d575876d3caeaf177e03f3212d",
+    "tests/search.rs": "41c7eb7adab089ee660e59075c50d2dd7e95b779ff34f911bd86c1785fec8716"
+  },
+  "compile_inputs_before": {
+    "Cargo.lock": "ccb7a4c0bf1a7f8eb712fd7be4ce166fd459652fa6107d02044e0184650c8b5c",
+    "Cargo.toml": "6da9cb5baa20c35e71589d5b3f848e657d7e2deedcc181aa7d5ec646524a417e",
+    "comparison/Cargo.lock": "8d26b3e5727aa1bee97b92d9dd29f73add758f0a24671934c8d3edda7522cac2",
+    "comparison/Cargo.toml": "3a0392789e532400b4028f57a87ca2a0e00dcc6e68d4ad3e97f6017f5c42dea8",
+    "comparison/src/main.rs": "51950df200fe1085c3b02d7fe3869701b08a05a9782e6c70a919e5777ac98d3d",
+    "src/bytes.rs": "7960c021a4c361a8278662a7bb971b03109fa1358761513efdc41a68fc5202a5",
+    "src/lib.rs": "43ad1a4a91424928e69d4b294d4afdb4697ba2980d4725cc7a7c188f5def48cf",
+    "src/prefilter.rs": "395eeb1c6e5a947d4d956e06f5cab58858d1dc4d1d70e1b5241d59b8783cd2c8",
+    "src/twoway.rs": "5fdc3b89ea587bed6cf6d7680a169746cfaf50dd2473810b0131df4bf2c2b7e3"
+  },
+  "build_returncode": 0,
+  "compile_inputs_after_build": {
+    "Cargo.lock": "ccb7a4c0bf1a7f8eb712fd7be4ce166fd459652fa6107d02044e0184650c8b5c",
+    "Cargo.toml": "6da9cb5baa20c35e71589d5b3f848e657d7e2deedcc181aa7d5ec646524a417e",
+    "comparison/Cargo.lock": "8d26b3e5727aa1bee97b92d9dd29f73add758f0a24671934c8d3edda7522cac2",
+    "comparison/Cargo.toml": "3a0392789e532400b4028f57a87ca2a0e00dcc6e68d4ad3e97f6017f5c42dea8",
+    "comparison/src/main.rs": "51950df200fe1085c3b02d7fe3869701b08a05a9782e6c70a919e5777ac98d3d",
+    "src/bytes.rs": "7960c021a4c361a8278662a7bb971b03109fa1358761513efdc41a68fc5202a5",
+    "src/lib.rs": "43ad1a4a91424928e69d4b294d4afdb4697ba2980d4725cc7a7c188f5def48cf",
+    "src/prefilter.rs": "395eeb1c6e5a947d4d956e06f5cab58858d1dc4d1d70e1b5241d59b8783cd2c8",
+    "src/twoway.rs": "5fdc3b89ea587bed6cf6d7680a169746cfaf50dd2473810b0131df4bf2c2b7e3"
+  },
+  "cases_sha256": "a09a72b54f19a1585e3ea821dbac68f606ff30dac8c02fb42a4f600b64e28947",
+  "benchmark_commands": [
+    [
+      "/workspace/scratch/165feb928e76/zscan-round2-before/comparison/target/release/zscan-comparison"
+    ]
+  ],
+  "benchmark_seconds": 19.17135338600201,
+  "benchmark_returncode": 0,
+  "compile_inputs_after_run": {
+    "Cargo.lock": "ccb7a4c0bf1a7f8eb712fd7be4ce166fd459652fa6107d02044e0184650c8b5c",
+    "Cargo.toml": "6da9cb5baa20c35e71589d5b3f848e657d7e2deedcc181aa7d5ec646524a417e",
+    "comparison/Cargo.lock": "8d26b3e5727aa1bee97b92d9dd29f73add758f0a24671934c8d3edda7522cac2",
+    "comparison/Cargo.toml": "3a0392789e532400b4028f57a87ca2a0e00dcc6e68d4ad3e97f6017f5c42dea8",
+    "comparison/src/main.rs": "51950df200fe1085c3b02d7fe3869701b08a05a9782e6c70a919e5777ac98d3d",
+    "src/bytes.rs": "7960c021a4c361a8278662a7bb971b03109fa1358761513efdc41a68fc5202a5",
+    "src/lib.rs": "43ad1a4a91424928e69d4b294d4afdb4697ba2980d4725cc7a7c188f5def48cf",
+    "src/prefilter.rs": "395eeb1c6e5a947d4d956e06f5cab58858d1dc4d1d70e1b5241d59b8783cd2c8",
+    "src/twoway.rs": "5fdc3b89ea587bed6cf6d7680a169746cfaf50dd2473810b0131df4bf2c2b7e3"
+  },
+  "finished_utc": "2026-11-09T16:16:11.874909+00:00"
+}

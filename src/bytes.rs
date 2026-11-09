@@ -174,22 +174,29 @@ fn scalar_pair<const REVERSE: bool>(
     n: &[u8],
     a: usize,
     b: usize,
-    mut lo: usize,
-    mut hi: usize,
+    start: usize,
+    end: usize,
 ) -> Option<usize> {
+    // Each anchor slice has exactly one byte per legal candidate. Establishing
+    // these ranges once lets the word loop retain simple relative bounds.
+    let left = &h[a..][start..end];
+    let right = &h[b..][start..end];
     let first = u64::from(n[a]) * 0x0101_0101_0101_0101;
     let second = u64::from(n[b]) * 0x0101_0101_0101_0101;
+    let length = left.len();
+    let mut lo = 0;
+    let mut hi = length;
     while hi - lo >= 8 {
         let at = if REVERSE { hi - 8 } else { lo };
-        let mask = zero_bytes(word(&h[at + a..at + a + 8]) ^ first)
-            & zero_bytes(word(&h[at + b..at + b + 8]) ^ second);
+        let mask = zero_bytes(word(&left[at..at + 8]) ^ first)
+            & zero_bytes(word(&right[at..at + 8]) ^ second);
         if mask != 0 {
             let bit = if REVERSE {
                 63 - mask.leading_zeros()
             } else {
                 mask.trailing_zeros()
             };
-            return Some(at + bit as usize / 8);
+            return Some(start + at + bit as usize / 8);
         }
         if REVERSE {
             hi -= 8;
@@ -197,10 +204,26 @@ fn scalar_pair<const REVERSE: bool>(
             lo += 8;
         }
     }
+    if length >= 8 && lo < hi {
+        // The complete boundary word stays inside both anchor slices. Its
+        // overlap was already proved not to match, so it cannot change order.
+        let at = if REVERSE { 0 } else { length - 8 };
+        let mask = zero_bytes(word(&left[at..at + 8]) ^ first)
+            & zero_bytes(word(&right[at..at + 8]) ^ second);
+        if mask != 0 {
+            let bit = if REVERSE {
+                63 - mask.leading_zeros()
+            } else {
+                mask.trailing_zeros()
+            };
+            return Some(start + at + bit as usize / 8);
+        }
+        return None;
+    }
     while lo < hi {
         let at = if REVERSE { hi - 1 } else { lo };
-        if h[at + a] == n[a] && h[at + b] == n[b] {
-            return Some(at);
+        if left[at] == n[a] && right[at] == n[b] {
+            return Some(start + at);
         }
         if REVERSE {
             hi -= 1;
@@ -260,34 +283,39 @@ mod x86 {
 
     #[target_feature(enable = "avx2")]
     pub(super) unsafe fn byte<const REVERSE: bool>(value: u8, h: &[u8]) -> Option<usize> {
+        if h.len() < 32 {
+            return super::scalar_byte::<REVERSE>(value, h);
+        }
         // SAFETY: caller established AVX2; register-only broadcast, no memory.
         let target = unsafe { _mm256_set1_epi8(value as i8) };
-        let mut lo = 0;
-        let mut hi = h.len();
-        if hi >= 32 {
-            let at = if REVERSE { hi - 32 } else { 0 };
-            // SAFETY: at..at+32 fits h; loadu needs no alignment, reads only,
-            // and AVX2 is active. Check the nearest block before bulk scanning.
-            let mask = unsafe {
-                _mm256_movemask_epi8(_mm256_cmpeq_epi8(
-                    _mm256_loadu_si256(h.as_ptr().add(at).cast()),
-                    target,
-                ))
-            } as u32;
-            if mask != 0 {
-                let lane = if REVERSE {
-                    31 - mask.leading_zeros()
-                } else {
-                    mask.trailing_zeros()
-                };
-                return Some(at + lane as usize);
-            }
-            if REVERSE {
-                hi -= 32;
+        let nearest = if REVERSE { h.len() - 32 } else { 0 };
+        // SAFETY: h has at least 32 bytes and nearest selects its first/last
+        // full vector. loadu permits byte alignment and shared read-only
+        // aliases. The caller guarantees AVX2 and OS support.
+        let mask = unsafe {
+            _mm256_movemask_epi8(_mm256_cmpeq_epi8(
+                _mm256_loadu_si256(h.as_ptr().add(nearest).cast()),
+                target,
+            ))
+        } as u32;
+        if mask != 0 {
+            let lane = if REVERSE {
+                31 - mask.leading_zeros()
             } else {
-                lo = 32;
-            }
+                mask.trailing_zeros()
+            };
+            return Some(nearest + lane as usize);
         }
+        // Move to the next aligned start/end strictly inside the first vector
+        // examined. The overlap is already known not to match. Only low five
+        // address bits are used; wrapping computes alignment, never a pointer
+        // for dereferencing. Every actual load still uses bounded slice offsets.
+        let (mut lo, mut hi) = if REVERSE {
+            let back = ((h.as_ptr() as usize).wrapping_add(h.len()).wrapping_sub(1) & 31) + 1;
+            (0, h.len() - back)
+        } else {
+            (32 - (h.as_ptr() as usize & 31), h.len())
+        };
         while hi - lo >= 128 {
             let at = if REVERSE { hi - 128 } else { lo };
             // SAFETY: the loop guarantees at..at+128 lies within h. All four
@@ -352,7 +380,30 @@ mod x86 {
                 lo += 32;
             }
         }
-        super::scalar_byte::<REVERSE>(value, &h[lo..hi]).map(|i| lo + i)
+        if lo == hi {
+            return None;
+        }
+        let at = if REVERSE { 0 } else { h.len() - 32 };
+        // SAFETY: h.len() >= 32, so this entire boundary vector is inside h.
+        // It overlaps only bytes already proved not to match. Thus selecting
+        // the first/last set bit cannot return a previously skipped hit.
+        // The read is unaligned, shared, and executed with AVX2 active.
+        let mask = unsafe {
+            _mm256_movemask_epi8(_mm256_cmpeq_epi8(
+                _mm256_loadu_si256(h.as_ptr().add(at).cast()),
+                target,
+            ))
+        } as u32;
+        if mask == 0 {
+            None
+        } else {
+            let lane = if REVERSE {
+                31 - mask.leading_zeros()
+            } else {
+                mask.trailing_zeros()
+            };
+            Some(at + lane as usize)
+        }
     }
 
     #[target_feature(enable = "avx2")]
@@ -364,6 +415,11 @@ mod x86 {
         mut lo: usize,
         mut hi: usize,
     ) -> Option<usize> {
+        let start = lo;
+        let end = hi;
+        if end - start < 16 {
+            return super::scalar_pair::<REVERSE>(h, n, a, b, lo, hi);
+        }
         // SAFETY: caller established AVX2; both broadcasts use registers only.
         let (first, second) =
             unsafe { (_mm256_set1_epi8(n[a] as i8), _mm256_set1_epi8(n[b] as i8)) };
@@ -400,23 +456,53 @@ mod x86 {
                 lo += 32;
             }
         }
+        if end - start >= 32 {
+            if lo == hi {
+                return None;
+            }
+            let at = if REVERSE { start } else { end - 32 };
+            // SAFETY: the original range has at least 32 legal starts, so
+            // this full boundary block stays inside it. With a,b<n.len(),
+            // both entire probe loads stay inside h. The overlap was tested
+            // with these same probes and had no match, preserving direction.
+            // loadu permits unaligned shared reads; AVX2 is active.
+            let mask = unsafe {
+                _mm256_movemask_epi8(_mm256_and_si256(
+                    _mm256_cmpeq_epi8(_mm256_loadu_si256(h.as_ptr().add(at + a).cast()), first),
+                    _mm256_cmpeq_epi8(_mm256_loadu_si256(h.as_ptr().add(at + b).cast()), second),
+                ))
+            } as u32;
+            return if mask == 0 {
+                None
+            } else {
+                let lane = if REVERSE {
+                    31 - mask.leading_zeros()
+                } else {
+                    mask.trailing_zeros()
+                };
+                Some(at + lane as usize)
+            };
+        }
         // AVX2 implies SSE2. Use a complete 16-byte vector for medium tails;
         // this is still wholly in bounds, even when the haystack is unaligned.
-        if hi - lo >= 16 {
+        // Here the original range has 16..31 starts. Its two boundary vectors
+        // cover the entire range, overlapping only already rejected starts.
+        let (first, second) = unsafe {
+            // SAFETY: AVX2 includes SSE2; these casts only select registers.
+            (
+                _mm256_castsi256_si128(first),
+                _mm256_castsi256_si128(second),
+            )
+        };
+        {
             let at = if REVERSE { hi - 16 } else { lo };
             // SAFETY: all 16 candidate starts fit the full needle. Both loads
             // therefore fit h, permit unaligned shared reads and use SSE2,
             // which is present whenever this AVX2 function is entered.
             let mask = unsafe {
                 _mm_movemask_epi8(_mm_and_si128(
-                    _mm_cmpeq_epi8(
-                        _mm_loadu_si128(h.as_ptr().add(at + a).cast()),
-                        _mm_set1_epi8(n[a] as i8),
-                    ),
-                    _mm_cmpeq_epi8(
-                        _mm_loadu_si128(h.as_ptr().add(at + b).cast()),
-                        _mm_set1_epi8(n[b] as i8),
-                    ),
+                    _mm_cmpeq_epi8(_mm_loadu_si128(h.as_ptr().add(at + a).cast()), first),
+                    _mm_cmpeq_epi8(_mm_loadu_si128(h.as_ptr().add(at + b).cast()), second),
                 ))
             } as u32;
             if mask != 0 {
@@ -427,13 +513,31 @@ mod x86 {
                 };
                 return Some(at + lane as usize);
             }
-            if REVERSE {
-                hi -= 16;
-            } else {
-                lo += 16;
+            if end - start == 16 {
+                return None;
             }
         }
-        super::scalar_pair::<REVERSE>(h, n, a, b, lo, hi)
+        let at = if REVERSE { start } else { end - 16 };
+        // SAFETY: the complete 16-start boundary block is in [start,end).
+        // Each anchor offset is smaller than n.len(), so both loads fit h.
+        // Overlapping starts were rejected above with identical probes.
+        // SSE2 is active via AVX2, and reads are shared and unaligned.
+        let mask = unsafe {
+            _mm_movemask_epi8(_mm_and_si128(
+                _mm_cmpeq_epi8(_mm_loadu_si128(h.as_ptr().add(at + a).cast()), first),
+                _mm_cmpeq_epi8(_mm_loadu_si128(h.as_ptr().add(at + b).cast()), second),
+            ))
+        } as u32;
+        if mask == 0 {
+            None
+        } else {
+            let lane = if REVERSE {
+                31 - mask.leading_zeros()
+            } else {
+                mask.trailing_zeros()
+            };
+            Some(at + lane as usize)
+        }
     }
 }
 

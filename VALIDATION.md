@@ -1,4 +1,10 @@
-# zscan 0.1.0 verification record
+# Initial implementation verification (historical)
+
+This record describes the implementation delivered at
+`fbe6bcb91989e45d4bf6805c6888863c57554cb5`, before the second optimization pass
+and the first publication. The later byte-loop and candidate-tail changes,
+corrected calibration, repeated measurements and retained regressions are
+documented in the [round-2 review](comparison/results/round2-review.md).
 
 ## Delivered and checked
 

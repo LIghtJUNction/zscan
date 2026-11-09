@@ -98,3 +98,18 @@ entire operation ineligible for performance ratios. This prevents incomplete
 searches from being counted as fast. See [baseline-notes.md](baseline-notes.md)
 for the minimal reproduction and source. No zscan or memchr discrepancy is
 accepted, and no case is removed or rewritten in response to this finding.
+
+## Round 2 calibration correction
+
+The first round and the first same-session round-2 baseline used one warmup
+pilot per batch size. A scheduler pause during that pilot could underestimate
+the necessary iteration count. One observed fast byte search consequently used
+one iteration per retained sample and reported 73–196 ns, dominated by timer
+overhead. Those runs remain available as diagnostic evidence.
+
+Corrected runs use the minimum of **three warmup pilots** at each candidate
+batch size. Only warmup chooses the batch size: all seven actual measurement
+samples, including slow ones, remain unfiltered. The 607 workloads, random
+seeds, algorithms, semantics, and sample count are unchanged. The corrected
+before source is an isolated checkout of `fbe6bcb91989e45d4bf6805c6888863c57554cb5`
+with this same corrected harness; after runs use the identical harness.

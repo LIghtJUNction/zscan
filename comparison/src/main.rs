@@ -349,7 +349,14 @@ fn measure<T>(iterations: &mut u64, smoke: bool, mut f: impl FnMut() -> T) -> Du
         } else {
             let mut count = 16;
             loop {
-                let elapsed = batch(count, &mut f).as_nanos();
+                // A scheduler pause in one pilot must not turn a nanosecond
+                // operation into a one-iteration, timer-dominated batch. Use
+                // the least interrupted of three warmup pilots for sizing.
+                // All seven *measurement* samples remain unfiltered.
+                let elapsed = (0..3)
+                    .map(|_| batch(count, &mut f).as_nanos())
+                    .min()
+                    .unwrap();
                 if elapsed >= 20_000 || count >= 1 << 22 {
                     *iterations =
                         ((u128::from(count) * 100_000 / elapsed.max(1)).clamp(1, 1 << 24)) as u64;

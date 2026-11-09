@@ -45,8 +45,10 @@ This bounds verification work by O(n + m), including repeated and periodic data.
 | AArch64 with target-guaranteed NEON | NEON |
 | Other targets | Portable SWAR/scalar |
 
-The x86 AVX2 path also uses SSE2 for 16-byte tails. No vector load crosses either
-end of a supplied slice; unaligned slices are supported. Safe public functions
+The x86 AVX2 path aligns its byte-scanning bulk loop and uses complete, in-bounds
+overlapping vectors at the slice boundary. It also uses SSE2 for 16-byte candidate
+ranges. No vector load crosses either end of a supplied slice; unaligned slices
+are supported. Safe public functions
 require no caller feature detection. A build using `-C target-cpu=native` or
 explicit target features must run on a compatible CPU and OS, as with any Rust
 binary built with those flags. No `std` feature detector, allocation, FFI,
@@ -88,15 +90,19 @@ mean speedups against the fastest correct baseline in each case were:
 
 | Workloads | One-shot substring forward | One-shot substring reverse |
 | --- | ---: | ---: |
-| Short (238 cases) | 1.08x | 1.54x |
-| Typical binary (195 cases) | 1.16x | 8.12x |
-| HTTP / JSON / logs (48 cases) | 1.91x | 5.21x |
+| Short (238 cases) | 1.21x | 1.68x |
+| Typical binary (195 cases) | 1.34x | 7.67x |
+| HTTP / JSON / logs (48 cases) | 1.92x | 5.27x |
 
 **The overall 2x research target was not met.** Typical byte searches were
-0.87x/0.88x the fastest forward/reverse baseline, and some short/reused searches
+0.98x/0.91x the fastest forward/reverse baseline, and some short/reused searches
 regressed. These repeated-buffer, warm-cache measurements on shared hardware
-are observations, not a universal performance guarantee. The [complete report](comparison/results/final/summary.md)
-includes all cases, slower results, native builds and component ablations.
+are observations, not a universal performance guarantee. The [current full report](comparison/results/round2-after-calibrated/summary.md)
+includes all cases, slower results and native builds. The [round-2 review](comparison/results/round2-review.md)
+compares the previous implementation with matched memchr controls, explains the
+warmup-calibration correction, and retains regression investigations. The
+[earlier component ablations](comparison/results/final/summary.md) remain available
+with their original source snapshots; they were measured before this revision.
 
 ## Release
 
