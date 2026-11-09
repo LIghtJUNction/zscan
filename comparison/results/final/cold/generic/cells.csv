@@ -1,0 +1,5 @@
+case,group,operation,haystack_len,needle_len,zscan_ns,memchr_ns,memx_ns,best_baseline,best_baseline_ns,speedup
+cold-none-n4096-m16-a17,cold,byte_find,4096,16,23747.0,50442.0,21212.0,memx,21212.0,0.8932496736429865
+cold-none-n4096-m16-a17,cold,byte_rfind,4096,16,22595.0,119810.0,17699.0,memx,17699.0,0.7833148926753707
+cold-none-n4096-m16-a17,cold,find,4096,16,23595.0,52038.0,19280.0,memx,19280.0,0.8171222716677262
+cold-none-n4096-m16-a17,cold,rfind,4096,16,24972.0,1734.0,,memchr,1734.0,0.06943777030273907

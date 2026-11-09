@@ -8,6 +8,7 @@ import gzip
 import hashlib
 import json
 import math
+import os
 from pathlib import Path
 import statistics
 
@@ -120,6 +121,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("run_root", type=Path)
     args = parser.parse_args()
+    baseline_link = os.path.relpath(Path(__file__).resolve().parent / "baseline-notes.md", args.run_root.resolve())
     reports = {}
     metadatas = {}
     lines = [
@@ -132,7 +134,7 @@ def main():
         "",
         "memx 0.2.2's reverse substring implementation omits a valid final candidate on some inputs. "
         "All memx/rfind cells are ineligible for speed claims; their actual correctness and timing remain "
-        "in samples.csv.gz. memchr is the strict reverse baseline. See ../../baseline-notes.md.",
+        f"in samples.csv.gz. memchr is the strict reverse baseline. See [baseline-notes.md]({baseline_link}).",
         "",
     ]
     for directory in sorted(args.run_root.iterdir()):
