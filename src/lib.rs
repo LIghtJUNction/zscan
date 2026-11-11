@@ -109,10 +109,10 @@ fn search<const REVERSE: bool>(h: &[u8], n: &[u8], cache: Option<&Finder<'_>>) -
         return Some(if REVERSE { h.len() } else { 0 });
     }
     if n.len() == 1 {
-        if h.len() >= 32 {
-            if let Some(finder) = cache {
-                return finder.backend.byte::<REVERSE>(n[0], h);
-            }
+        if h.len() >= 32
+            && let Some(finder) = cache
+        {
+            return finder.backend.byte::<REVERSE>(n[0], h);
         }
         return if REVERSE {
             rfind_byte(n[0], h)
