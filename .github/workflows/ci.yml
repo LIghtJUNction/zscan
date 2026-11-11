@@ -33,7 +33,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-24.04, ubuntu-24.04-arm]
-        rust: [stable, 1.70.0]
+        rust: [stable, 1.99.1]
     steps:
       # actions/checkout v7.0.1; official tag resolved on 2026-11-09.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1

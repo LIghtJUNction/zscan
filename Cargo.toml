@@ -1,8 +1,8 @@
 [package]
 name = "zscan"
 version = "0.1.1"
-edition = "2021"
-rust-version = "1.70"
+edition = "2024"
+rust-version = "1.99.1"
 description = "Zero-dependency, allocation-free byte and substring search for no_std"
 license = "MIT"
 repository = "https://github.com/LIghtJUNction/zscan"
@@ -16,4 +16,4 @@ path = "src/lib.rs"
 [workspace]
 members = ["."]
 exclude = ["comparison"]
-resolver = "2"
+resolver = "3"
