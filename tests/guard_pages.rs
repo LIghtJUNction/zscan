@@ -17,7 +17,7 @@ const PROT_READ_WRITE: c_int = 1 | 2;
 const MAP_PRIVATE_ANONYMOUS: c_int = 2 | 0x20;
 const SC_PAGESIZE: c_int = 30;
 
-extern "C" {
+unsafe extern "C" {
     fn mmap(
         address: *mut c_void,
         length: usize,
