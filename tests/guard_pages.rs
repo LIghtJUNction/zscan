@@ -10,7 +10,7 @@ use std::ffi::c_void;
 use std::ops::Range;
 use std::os::raw::{c_int, c_long};
 use std::ptr::NonNull;
-use zscan::{find, find_byte, rfind, rfind_byte, Finder};
+use zscan::{Finder, find, find_byte, rfind, rfind_byte};
 
 const PROT_NONE: c_int = 0;
 const PROT_READ_WRITE: c_int = 1 | 2;

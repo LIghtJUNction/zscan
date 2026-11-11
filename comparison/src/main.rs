@@ -295,7 +295,9 @@ fn check(h: &[u8], n: &[u8], byte: u8, label: &str) -> bool {
     }
     let memx_reverse = memx::memrmem(h, n);
     if memx_reverse != backward {
-        eprintln!("known-baseline-mismatch,{label},memx/rfind,expected={backward:?},actual={memx_reverse:?}");
+        eprintln!(
+            "known-baseline-mismatch,{label},memx/rfind,expected={backward:?},actual={memx_reverse:?}"
+        );
     }
     let bf = h.iter().position(|&v| v == byte);
     let br = h.iter().rposition(|&v| v == byte);
@@ -438,7 +440,9 @@ fn cold(operation: &str, engine: &str) {
     bb(answer);
     let elapsed = start.elapsed().as_nanos();
     assert_eq!(answer, None);
-    println!("case,group,operation,engine,haystack_len,needle_len,alignment,sample,iterations,elapsed_ns,ns_per_op,correct,eligible");
+    println!(
+        "case,group,operation,engine,haystack_len,needle_len,alignment,sample,iterations,elapsed_ns,ns_per_op,correct,eligible"
+    );
     println!(
         "{name},cold,{operation},{engine},4096,16,17,0,1,{elapsed},{elapsed},true,{}",
         !(operation == "rfind" && engine == "memx"),
@@ -490,7 +494,10 @@ fn main() -> io::Result<()> {
         "{} fixed cases and seeded random differential checks passed",
         cases.len()
     );
-    writeln!(out, "case,group,operation,engine,haystack_len,needle_len,alignment,sample,iterations,elapsed_ns,ns_per_op,correct,eligible")?;
+    writeln!(
+        out,
+        "case,group,operation,engine,haystack_len,needle_len,alignment,sample,iterations,elapsed_ns,ns_per_op,correct,eligible"
+    )?;
     for (case_index, c) in cases.iter().enumerate() {
         let searchers = Searchers {
             zscan: zscan::Finder::new(&c.needle),

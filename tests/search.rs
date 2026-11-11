@@ -1,5 +1,5 @@
 //! These references deliberately do no preprocessing, filtering or word loads.
-use zscan::{find, find_byte, rfind, rfind_byte, Finder};
+use zscan::{Finder, find, find_byte, rfind, rfind_byte};
 
 fn reference(haystack: &[u8], needle: &[u8], reverse: bool) -> Option<usize> {
     if needle.len() > haystack.len() {
